@@ -4,13 +4,13 @@ ssz = [63,   125,  251,   501,   1003,   2005,    4010]
 reps = range(1,6)  # 1:5 
 
 mem_mb_dict = {
-	128000: 9000,
-	512000: 30000,
-	1024000: 94000
+	'128000': 9000,
+	'512000': 30000,
+	'2048000': 94000
 }
 # a function to return memory requirements given cohort_size wildcard
 def mem_mb_needed(wc):
-	if(wc.cohort_size < 128000):
+	if(int(wc.cohort_size) < 128000):
 		return(4600)
 	else:
 		return(mem_mb_dict[wc.cohort_size])
@@ -32,7 +32,7 @@ rule simulate:
     	SampleSize = "{sample_size}",
     	rep_num = "{rep}"
     resources:
-    	mem_mb = mem_mb_needed
+    	mem_mb = lambda wc: mem_mb_needed(wc)
     log:
     	"logs/single-reps/{cohort_size}/{sample_size}/{rep}-log.txt"
     script:
