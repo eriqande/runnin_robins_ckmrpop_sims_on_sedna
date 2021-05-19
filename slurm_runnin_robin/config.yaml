@@ -6,5 +6,5 @@ max-status-checks-per-second: 10
 local-cores: 1
 latency-wait: 60
 keep-going: True
-default-resources: [cpus=1, mem_mb=4600,
+default-resources: [cpus=1, mem_mb=4600]
 resources: [cpus=400, mem_mb=1880000]
