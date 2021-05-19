@@ -2,3 +2,8 @@
 .Rhistory
 .RData
 .Ruserdata
+.snakemake
+dag.svg
+logs
+single-reps
+summarized

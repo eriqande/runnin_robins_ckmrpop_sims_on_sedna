@@ -7,10 +7,17 @@ library(CKMRpop)
 #vignette("species_1_simulation", package = "CKMRpop")
 
 
-# these are the values that get changed for different runs
-cohort_size <- 2000
-SampleSize = 125 ## fixed number to subsample from each cohort
-NReps = 5
+#### these are the values that get changed for different runs ####
+cohort_size <- as.integer(snakemake@params$cohort_size)
+SampleSize = as.integer(snakemake@params$SampleSize)
+rep_num = as.integer(snakemake@params$rep_num)
+my_seed = cohort_size * rep_num
+
+#### Set some things for single runs ####
+# We set NReps to 2 to make sure all the arrays get allocated and work
+# the way they are supposed to.  Then we only cycle over R from 1 to NReps - 1
+# (i.e. 1 to 1).
+NReps <- 2
 
 SPD <- species_1_life_history
 
@@ -69,6 +76,9 @@ range = paste(samp_start_year,"-",samp_stop_year,sep="")
 SPD$`discard-all` <- 0
 SPD$`gtyp-ppn-fem-pre` <- paste(range, "0 ", samp_frac, paste(rep(sfspace, SPD$'max-age' - 2), collapse = ""))
 SPD$`gtyp-ppn-male-pre` <- SPD$`gtyp-ppn-fem-pre`
+
+# eric reduces the memory over-allocation here
+SPD$`alloc-extra` <- 2
 
 Born = as.integer((samp_start_year:samp_stop_year)-2)
 YearsSamp = length(Born)
@@ -152,7 +162,7 @@ return(all_sibs)  }  # end function
 
 ######### start simulation
 
-for (R in 1:NReps)  {
+for (R in 1:(NReps-1))  {
 
 print(paste0("Replicate = ",R))
 flush.console()
@@ -160,7 +170,7 @@ flush.console()
 BigSibsHalf = matrix(0,YearsSamp,YearsSamp)
 BigSibsFull = BigSibsHalf
 
-set.seed(cohort_size * R)  # to check for identity between parallel and serial runs
+set.seed(my_seed)
 spip_dir <- run_spip(
   pars = SPD
 )
@@ -257,141 +267,12 @@ acrossfull = subset(FSP,FSP$Born1 != FSP$Born2)
 BigGapHalf[,,R] = BigSibsHalf
 BigGapFull[,,R] = BigSibsFull
 
-  }  # end for R
+}  # end for R
 
-########################
-
-ComparisonsWithin = SampleSize*(SampleSize-1)/2
-
-#write.csv(BigNb,file="C:/users/lukes/dropbox/halflings/simulation/SibsB-Nb.csv")
-#write.csv(BigNbmoms,file="C:/users/lukes/dropbox/halflings/simulation/SibsB-Nbmoms.csv")
-#write.csv(BigNbdads,file="C:/users/lukes/dropbox/halflings/simulation/SibsB-Nbdads.csv")
-#write.csv(BigGapHalf,file="C:/users/lukes/dropbox/halflings/simulation/SibsB-GapHalf.csv")
-#write.csv(BigGapFull,file="C:/users/lukes/dropbox/halflings/simulation/SibsB-GapFull.csv")
-#write.csv(BigSibsSame,file="C:/users/lukes/dropbox/halflings/simulation/SibsB-SibsSame.csv")
-
-MeanGapsHalf = apply(BigGapHalf,1:2,mean)
-MeanGapsFull = apply(BigGapFull,1:2,mean)
-
-WangR = matrix(0,NReps,YearsSamp)
-for (R in 1:NReps)  {
-  matches = 1:YearsSamp
-  for (k in 1:YearsSamp)  {
-  matches[k] = 2*BigGapFull[k,k,R] + BigGapHalf[k,k,R] }
-  WangR[R,] = matches
-  }  ## end for R
-WangNb = 4*ComparisonsWithin/WangR
-
-TotWangR = matrix(0,NReps,YearsSamp-1)
-colnames(TotWangR) = c("2Years","3Years","4Years","5Years")
-for (R in 1:NReps)  {
-for (j in 1:(YearsSamp-1))  {
-  TotWangR[R,j] = sum(WangR[R,1:(1+j)])
-  }  # end for j
-  }  # end for R
-
-ComboWangNb = matrix(0,NReps,YearsSamp-1)
-for (j in 2:YearsSamp)  {
-Top = 4*ComparisonsWithin*j
-ComboWangNb[,j-1] = Top/TotWangR[,j-1]  }
-
-WangData = matrix(NA,5,YearsSamp-1)
-colnames(WangData) = c("2Years","3Years","4Years","5Years")
-rownames(WangData) = c("5%","Median","95%","CV1","CV2")
-for (j in 1:(YearsSamp-1))  {
-WangData[1:3,j] = quantile(ComboWangNb[,j],probs = c(0.05, 0.5, 0.95))
-WangData[4,j] = sd(ComboWangNb[,j])/mean(ComboWangNb[,j])
-WangData[5,j] = sd(1/ComboWangNb[,j])/mean(1/ComboWangNb[,j])
-}
-
-AcrossHalfs = matrix(0,NReps,(YearsSamp-1))
-colnames(AcrossHalfs) = c("2Years","3Years","4Years","5Years")
-for (R in 1:NReps)  {
-f=BigGapHalf[,,R]
-f[!upper.tri(f)] <- 0
-  for (j in 1:(YearsSamp-1))  {
-    temp = f[1:(j+1),1:(j+1)]
-  AcrossHalfs[R,j] = sum(temp)
-  }  # end for j
-  }  # end for R
-
-
-gaps = 1:(YearsSamp-1)
-
-ComparisonsBetween = matrix(2*SampleSize^2,YearsSamp-1,YearsSamp-1)
-colnames(ComparisonsBetween) = c("Year2","Year3","Year4","Year5")
-rownames(ComparisonsBetween) = c("Year1","Year2","Year3","Year4")
-ComparisonsBetween[lower.tri(ComparisonsBetween)] <- NA
-AdjustedComparisonsBetween = ComparisonsBetween
-
-K = c(1,rep(survival,omega-1))
-Lx = cumprod(K)
-Nx = Lx*cohort_size
-AdultN = sum(Nx[alpha:omega])
-effectivesurvival = 1:4
-for (j in 1:4)  {
-effectivesurvival[j] = sum(Nx[(alpha+j):omega])/AdultN
-}  # end for j
-
-for (j in 1:(YearsSamp-1))  {
-for (k in j:(YearsSamp-1)) {
-  q = 1+k-j
-  AdjustedComparisonsBetween[j,k] = ComparisonsBetween[j,k]*effectivesurvival[q]
-  }}
-TotalAdjustedComparisons = 1:(YearsSamp-1)
-for (j in 1:(YearsSamp-1)) {
-  temp = AdjustedComparisonsBetween[1:j,1:j]
-  TotalAdjustedComparisons[j] = sum(temp,na.rm=T)
-  }
-
-X = t(2/AcrossHalfs)*TotalAdjustedComparisons
-Nhat = t(X)
-
-NData = matrix(NA,5,YearsSamp-1)
-colnames(NData) = c("2Years","3Years","4Years","5Years")
-rownames(NData) = c("5%","Median","95%","CV1","CV2")
-for (j in 1:(YearsSamp-1))  {
-NData[1:3,j] = quantile(Nhat[,j],probs = c(0.05, 0.5, 0.95))
-NData[4,j] = sd(Nhat[,j])/mean(Nhat[,j])
-NData[5,j] = sd(1/Nhat[,j])/mean(1/Nhat[,j])
-}
-
-MeanGapHalf = matrix(NA,YearsSamp,YearsSamp)
-for (j in 1:YearsSamp)  {
-for (k in 1:YearsSamp)  {
-MeanGapHalf[j,k] = mean(BigGapHalf[j,k,])
-}}
-
-TotSibs = rep(0,YearsSamp)
-for (j in 1:YearsSamp)  {
-for (k in j:YearsSamp)  {
-  X = 1 + k-j
-  TotSibs[X] = TotSibs[X] + MeanGapHalf[j,k]
-  }}
-
-##head(BigNb)
-##head(WangNb)
-#head(BigGapHalf)
-#head(BigGapFull)
-#BigSibsSame[,,1:3]
-#colMeans(BigGapHalf)
-
-### harmonic means
-1/mean(1/WangNb)
-1/mean(1/BigNb)
-1/mean(1/Nhat)
-
-sum(BigGapFull,na.rm=T)
-
-t(NData)
-t(WangData)
-
-GapCompare = rowSums(ComparisonsBetween,na.rm=T)
-ESibs = GapCompare*effectivesurvival*2/AdultN
-TotSibs
-ESibs
-
-cohort_size
-SampleSize
-
-
+# Now we just save the BigSibsHalf and BigSibsFull for summarizing later.
+write_rds(
+  list(
+    bsh = BigSibsHalf,
+    bsf = BigSibsFull
+  ), file = snakemake@output[[1]]
+)
