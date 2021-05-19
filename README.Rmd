@@ -1,6 +1,6 @@
 ---
 title: "README"
-output: html_document
+output: github_document
 ---
 
 ```{r setup, include=FALSE}
@@ -14,7 +14,8 @@ this into a system that has two parts:
 
 1. a script that does a single run of spip and processes the
 output and stores it in an RDS file.
-2. a script that processes all the reps from 1 for a particular
+2. a script that processes all the reps done in item 1 (above)
+for a particular
 set of parameters, and spits out the results Robin wants.
 
 We will do this within the context of Snakemake and just
@@ -22,14 +23,14 @@ declare the parameter values in simple Python lists, and expand
 them appropriately.
 
 
-The variables that we will pass in for the parameter space will be:
+The variables that will become our wildcards/parameters will be:
 
 - `cohort_size`
 - `SampleSize`
 -  `Rep`
 
 We will set the seed for each run using the cohort_size and the rep number.
-Basically, we will just set it to `cohort_size * Rep`.
+Basically, we will just set it to the product of `cohort_size` and `Rep`.
 
 I have broken Robin's original script into two separate ones:
 
@@ -80,6 +81,18 @@ We do that in the slurm profile. I'm not sure if the default slurm profile maps
 cpus to the resources.  Kind of lame, but not an issue...
 
 I set up a slurm profile here and I modified it to use appropriate values.
+
+## Report from initial 5 reps
+
+The cohort_size = 512000 runs took between 20 and 30 minutes. 
+The cohort_size = 2048000 runs will take at least 4 times longer, and maybe more.  The bottleneck
+is tidyverse operations to make the files from whence to build the C data structures
+for recursively traversing the pedigree.  Pretty lame that that is the part that takes
+the most time.  
+
+It appears that everything has sufficient memory.
+
+Once the five remaining cohort_size = 2048000 runs are done I will launch everything and it should all be done within no more than a couple of days.
 
 
 
