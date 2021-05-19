@@ -33,6 +33,8 @@ rule simulate:
     	rep_num = "{rep}"
     resources:
     	mem_mb = lambda wc: mem_mb_needed(wc)
+    envmodules:
+    	"R/4.0.3"
     log:
     	"logs/single-reps/{cohort_size}/{sample_size}/{rep}-log.txt"
     script:
@@ -45,5 +47,7 @@ rule summarize_reps:
         expand("single-reps/{{cohort_size}}/{{sample_size}}/{rep}.rds", rep = reps)
     output:
         "summarized/csz{cohort_size}_ssz{sample_size}.rds"
+    envmodules:
+    	"R/4.0.3"
     script:
         "R/summarize-reps.R"
