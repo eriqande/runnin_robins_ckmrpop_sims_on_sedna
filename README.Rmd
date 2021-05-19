@@ -69,7 +69,7 @@ cohort size we should be fine with the default 4.7 Gb that it gets with one core
 For other cohort sizes:
 
 - 512,000.  Let's shoot for 30 Gb which could fit three runs on a standard node.
-- 1,024,000. I will first try 94 Gb which should let it fit on a standard node. If
+- 2,048,000. I will first try 94 Gb which should let it fit on a standard node. If
 that does not work, then I will go for the smallest number that works so I can fit as many as possible on the himem machines.
 
 We want to restrict our total resource utilization to something reasonable.

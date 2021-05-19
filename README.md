@@ -63,7 +63,7 @@ For other cohort sizes:
 
   - 512,000. Let’s shoot for 30 Gb which could fit three runs on a
     standard node.
-  - 1,024,000. I will first try 94 Gb which should let it fit on a
+  - 2,048,000. I will first try 94 Gb which should let it fit on a
     standard node. If that does not work, then I will go for the
     smallest number that works so I can fit as many as possible on the
     himem machines.
