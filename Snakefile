@@ -1,7 +1,7 @@
 # here are the different cohort and sample sizes and reps to use
 csz = [500, 2000, 8000, 32000, 128000, 512000, 2048000]
 ssz = [63,   125,  251,   501,   1003,   2005,    4010] 
-reps = range(1,6)  # 1:5 
+reps = range(1,101)  # 1:100 
 
 mem_mb_dict = {
 	'128000': 9000,
