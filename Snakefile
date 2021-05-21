@@ -1,6 +1,6 @@
 # here are the different cohort and sample sizes and reps to use
-csz = [500, 2000, 8000, 32000, 128000, 512000, 2048000]
-ssz = [63,   125,  251,   501,   1003,   2005,    4010] 
+csz = [500, 2000, 8000, 32000, 128000, 512000, 2048000, 128000, 512000, 2048000]
+ssz = [63,   125,  251,   501,   1003,   2005,    4010,    709,   1418,    2836] 
 reps = range(1,101)  # 1:100 
 
 mem_mb_dict = {
@@ -49,5 +49,7 @@ rule summarize_reps:
         "summarized/csz{cohort_size}_ssz{sample_size}.rds"
     envmodules:
     	"R/4.0.3"
+    log:
+        "logs/summarized/csz{cohort_size}_ssz{sample_size}-log.txt"
     script:
         "R/summarize-reps.R"

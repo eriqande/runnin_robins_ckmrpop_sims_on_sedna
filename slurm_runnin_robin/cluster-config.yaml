@@ -3,3 +3,4 @@ __default__ :
   output: "slurm_logs/{rule}/{rule}.{wildcards}-%j.out"
   error: "slurm_logs/{rule}/{rule}.{wildcards}-%j.err"
   job-name: "{rule}.{wildcards}"
+  

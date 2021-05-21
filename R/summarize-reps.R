@@ -1,3 +1,9 @@
+log <- file(snakemake@log[[1]], open="wt")
+sink(log, type = "output")
+sink(log, type = "message")
+
+
+
 library(tidyverse)
 library(hexbin)
 library(rdist)
@@ -97,6 +103,7 @@ for(R in 1:NReps) {
 }  # end for R
 
 ########################
+
 
 ComparisonsWithin = SampleSize*(SampleSize-1)/2
 
@@ -199,21 +206,53 @@ for (k in 1:YearsSamp)  {
 MeanGapHalf[j,k] = mean(BigGapHalf[j,k,])
 }}
 
-TotSibs = rep(0,YearsSamp)
+SplitSibs = matrix(NA,NReps,YearsSamp)
+TotAcross = rep(NA,NReps)
+for (R in 1:NReps)  {
+temp = rep(0,YearsSamp)
+A = BigGapHalf[,,R]
+##A[lower.tri(A,diag=FALSE)] <- 0
 for (j in 1:YearsSamp)  {
 for (k in j:YearsSamp)  {
   X = 1 + k-j
-  TotSibs[X] = TotSibs[X] + MeanGapHalf[j,k]
-  }}
+  temp[X] = temp[X] + A[j,k]
+  }}  ## end for j,k
+SplitSibs[R,] = temp
+TotAcross[R] = sum(temp[2:YearsSamp])
+} ## end for R
 
-##head(BigNb)
-##head(WangNb)
-#head(BigGapHalf)
-#head(BigGapFull)
-#BigSibsSame[,,1:3]
-#colMeans(BigGapHalf)
+BigSplit = cbind(SplitSibs,TotAcross)
+MeanGaps = colMeans(BigSplit)
+VarGaps = 1:(YearsSamp+1)
+for (j in 1:(YearsSamp+1))  {
+VarGaps[j] = var(BigSplit[,j])
+}  # end for j
 
 GapCompare = rowSums(ComparisonsBetween,na.rm=T)
+ESibs = GapCompare*effectivesurvival*2/AdultN
+GapData = cbind(MeanGaps,VarGaps,VarGaps/MeanGaps,sqrt(VarGaps)/MeanGaps)
+colnames(GapData) = c("MeanSibs","Var","Phi","CV")
+rownames(GapData) = c(0:(YearsSamp-1),"TotAcross")
+
+### harmonic means
+1/mean(1/WangNb)
+1/mean(1/BigNb)
+1/mean(1/Nhat)
+
+sum(BigGapFull,na.rm=T)
+
+t(NData)
+t(WangData)
+
+GapData
+ESibs
+
+cohort_size
+SampleSize
+
+
+
+
 # write everything out into a list
 ret <- list(
   ### harmonic means
@@ -229,7 +268,7 @@ ret <- list(
   GapCompare = GapCompare,
   ESibs = GapCompare*effectivesurvival*2/AdultN,
 
-  TotSibs = TotSibs,
+  GapData = GapData,
 
   cohort_size = cohort_size,
   SampleSize = SampleSize
