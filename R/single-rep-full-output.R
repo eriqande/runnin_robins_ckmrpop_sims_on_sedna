@@ -16,7 +16,16 @@ library(CKMRpop)
 cohort_size <- as.integer(snakemake@params$cohort_size)
 SampleSize = as.integer(snakemake@params$SampleSize)
 rep_num = as.integer(snakemake@params$rep_num)
+
+# here are values for testing
+cohort_size <- 2000
+SampleSize <- 125
+rep_num <- 1
+
 my_seed = cohort_size * rep_num
+
+
+
 
 #### Set some things for single runs ####
 # We set NReps to 2 to make sure all the arrays get allocated and work

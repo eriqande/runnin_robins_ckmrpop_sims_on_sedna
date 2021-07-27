@@ -1,0 +1,36 @@
+---
+title: "The E-runs"
+output: github_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+Robin found a weird pattern in his simulations in which the variance in the
+number of cross-cohort half-sibling pairs was greater than the mean.  This is,
+perhaps, to be expected when population sizes are quite small relative to the sample
+sizes so that there are many pairs of sibs from the same parent (or, somewhat equivalently,
+there are many sib pairs that share members---i.e. they are part of the same connected
+component if you make a graph).
+
+When the population size gets bigger, and thus the sampling is getting sparser, in some sense,
+it seems that that effect should attenuate, and the variance in the number of half-sibling pairs
+should get closer to the number of mean.
+
+The E-runs are a series of simulations in which I simulate using Robin's basic demography of fish
+that live for 10 years.  To see the sample sizes (per year) and the downsampled sizes (over all 5 years
+of sampling) that we are dealing with we can look at the snakefile:
+```{r}
+system("head -n 8 Snakefile-E-runs")
+```
+
+
+This is set up to do 200 reps of each scenario in parallel on the cluster, and it should never
+eat up more than 25 nodes at a time.  The total adult population size is roughly twice the cohort
+size.  The true pop size value gets recorded.
+
+To launch the runs, we do like this:
+```sh
+
+```

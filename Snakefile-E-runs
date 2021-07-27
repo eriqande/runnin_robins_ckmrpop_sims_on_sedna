@@ -1,0 +1,53 @@
+# here are the different cohort and sample sizes and reps to use
+csz = [500, 2000, 8000, 32000, 128000, 512000] #, 2048000, 128000, 512000, 2048000]
+ssz = [63,   125,  251,   501,   1003,   2005] #,    4010,    709,   1418,    2836] 
+
+# here is the primary downsample size to use
+dsz = [313, 625,  1250,   2500,  5000,  10000]
+reps = range(1,201)  # 1:100 
+
+mem_mb_dict = {
+	'128000': 9000,
+	'512000': 30000,
+	'2048000': 94000
+}
+# a function to return memory requirements given cohort_size wildcard
+def mem_mb_needed(wc):
+	if(int(wc.cohort_size) < 128000):
+		return(4600)
+	else:
+		return(mem_mb_dict[wc.cohort_size])
+
+
+# here to define all the simulations we need:
+par_combos = expand("single-reps-E-runs/{cohort_size}/{sample_size}/{down_sample_size}", 
+            zip, 
+            cohort_size = csz, 
+            sample_size = ssz,
+            down_sample_size = dsz)
+
+
+
+rule all:
+    input: expand("{pc}/{rep}.rds", pc = par_combos, rep = reps)
+        
+
+rule simulate:
+    output:
+        "single-reps-E-runs/{cohort_size}/{sample_size}/{down_sample_size}/{rep}.rds"
+    params:
+    	cohort_size = "{cohort_size}",
+    	SampleSize = "{sample_size}",
+        DownSampleSize = "{down_sample_size}",
+    	rep_num = "{rep}"
+    resources:
+    	mem_mb = lambda wc: mem_mb_needed(wc)
+    envmodules:
+    	"R/4.0.3"
+    log:
+    	"logs/single-reps-E-runs/{cohort_size}/{sample_size}/{down_sample_size}/{rep}-log.txt"
+    script:
+    	"R/E-runs-single-rep.R"
+        
+
+
