@@ -1,6 +1,6 @@
 ---
 title: "The E-runs"
-output: github_document
+output: html_notebook
 ---
 
 ```{r setup, include=FALSE}
@@ -8,7 +8,8 @@ knitr::opts_chunk$set(echo = TRUE)
 ```
 
 Robin found a weird pattern in his simulations in which the variance in the
-number of cross-cohort half-sibling pairs was greater than the mean.  This is,
+number of cross-cohort half-sibling pairs was greater than the mean---and sometimes
+it was two to three times greater than the mean. Some increased variance is,
 perhaps, to be expected when population sizes are quite small relative to the sample
 sizes so that there are many pairs of sibs from the same parent (or, somewhat equivalently,
 there are many sib pairs that share members---i.e. they are part of the same connected
@@ -19,7 +20,8 @@ it seems that that effect should attenuate, and the variance in the number of ha
 should get closer to the number of mean.
 
 The E-runs are a series of simulations in which I simulate using Robin's basic demography of fish
-that live for 10 years.  To see the sample sizes (per year) and the downsampled sizes (over all 5 years
+that live for 10 years.  To see the cohort sizes, the sample sizes (per year),
+and the downsampled sizes (over all 5 years
 of sampling) that we are dealing with we can look at the snakefile:
 ```{r}
 system("head -n 8 Snakefile-E-runs")
@@ -28,9 +30,92 @@ system("head -n 8 Snakefile-E-runs")
 
 This is set up to do 200 reps of each scenario in parallel on the cluster, and it should never
 eat up more than 25 nodes at a time.  The total adult population size is roughly twice the cohort
-size.  The true pop size value gets recorded.
+size.  The true pop size value gets recorded.  Each separate run that gets launched by Snakemake
+runs a single rep using the script `./R/E-runs-single-rep.R` and saves the summarized results
+in an rds file for later summarization once all the parallel runs are done.
 
-To launch the runs, we do like this:
+For a listing of `./R/E-runs-single-rep.R`, see below.
+
+To launch the runs I had some extra juggling.  User `ltimm` is running vcftools on nodes 01 to 03 and
+it must be super I/O heavy because the test runs I launched on it have completely stalled.
+
+So, I add to the slurm profile's cluster-config.yaml:
+```yaml
+  exclude: "node[01-03]"
+```
+And then I launch it like so:
 ```sh
+snakemake -s Snakefile-E-runs --use-envmodules --profile ./slurm_runnin_robin --jobs 500
+```
 
+In the profile's config.yaml I also set:
+```yaml
+max-jobs-per-second: 50
+```
+I probably should allow for more checks than 10 each second to go hand in hand with that, but
+submitting one job a second was way too slow for this.
+
+# Processing those runs
+
+Once those runs were done I did this to read all the outputs on the cluster and write them
+into `summarized-E-runs/E-runs.rds`
+```{r, eval=FALSE}
+library(tidyverse)
+summ <- lapply(
+  dir(path = "single-reps-E-runs", recursive = TRUE, full.names = TRUE), 
+  function(x) read_rds(x)
+) %>%
+  bind_rows()
+
+dir.create("summarized-E-runs")
+write_rds(summ, file = "summarized-E-runs/E-runs.rds", compress = "xz")
+```
+
+
+Then, to find the mean and variance for the different scenarios, as well as to summarise
+the fraction of pairs with unshared vs shared members, I did this:
+```{r}
+library(tidyverse)
+# get the total number of PO and cross-cohort half-sibs found for each rep
+pcounts <- read_rds("summarized-E-runs/E-runs.rds") %>%
+  group_by(rep, dom_relat, cohort_size, DownSampleTot) %>%
+  summarise(
+    N_adult = mean(mean_num_adults), 
+    all_pairs = sum(tot_pairs),
+    fract_singleton_pairs = tot_pairs[npairs_in_conn_comp == 1] / all_pairs  
+  )
+
+# then to get the mean and variance (and phi = var / mean) of those we do:
+big_summ <- pcounts %>%
+  group_by(dom_relat, cohort_size, DownSampleTot) %>% 
+  summarise(
+    mean_N_adult = mean(N_adult),
+    mean_R = mean(all_pairs),
+    var_R = var(all_pairs),
+    Phi = var_R / mean_R,
+    mean_fract_sing = mean(fract_singleton_pairs),
+    sd_fract_sing = sd(fract_singleton_pairs)
+   ) %>%
+  arrange(desc(dom_relat))
+```
+
+I will write that out to a CSV file for people to see:
+```{r}
+write_csv(big_summ, "summarized-E-runs/big_summ.csv")
+```
+
+And we can also display it here:
+```{r}
+big_summ
+```
+
+The upshot is that we don't see var/mean greater than about 1.5.  Certainly nothing in the 2 to 3 range.
+And all the places we do see that are those in which there is considerable non-independence between pairs,
+as suggested by the low fraction of pairs that are singleton pairs (i.e. pairs whose members do not appear in
+any other kin pairs).  
+
+# Listing of the source code for `./R/E-runs-single-rep.R`
+
+```r
+`r paste(readLines("R/E-runs-single-rep.R"), collapse = "\n")`
 ```

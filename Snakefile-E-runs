@@ -4,7 +4,7 @@ ssz = [63,   125,  251,   501,   1003,   2005] #,    4010,    709,   1418,    28
 
 # here is the primary downsample size to use
 dsz = [313, 625,  1250,   2500,  5000,  10000]
-reps = range(1,201)  # 1:100 
+reps = range(1,201)  # 1:200 
 
 mem_mb_dict = {
 	'128000': 9000,

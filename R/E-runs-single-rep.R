@@ -28,6 +28,7 @@ set.seed(cohort_size * SampleSize + rep_num)
 #DownSampleSize <- 625  # the total number of individuals to be left with across all years, after downsampling
 
 
+#### THIS IS FROM ROBIN'S CODE, WHERE HE SETS THE DEMOGRAPHIC PARAMETERS ##########
 # set the population life history
 SPD <- species_1_life_history
 
@@ -86,21 +87,26 @@ SPD$`gtyp-ppn-male-pre` <- SPD$`gtyp-ppn-fem-pre`
 # eric reduces the memory over-allocation here
 SPD$`alloc-extra` <- 2
 
+##### END ROBINS CODE ########################################################
 
+# this is done within lapply because I originally did multiple reps in here,
+# but then decided to parallelize over reps on the cluster, so I left it
+# as is, except we pass the rep number into lapply.
 pair_nums <- lapply(
   rep_num,
   function(R)  {
 
+    # run spip with the specified parameters
     spip_dir <- run_spip(
       pars = SPD
     )
 
-    # now read that in and find relatives within the one-generation pedigree
+    # now read the output in and find relatives within the one-generation pedigree
     slurped <- slurp_spip(spip_dir, 1)
 
-    # get the average number of reproductively active adults
+    # get the average number of reproductively active adults over all years of the simulation
     mean_num_adults <- slurped$census_prekill %>%
-      filter(age >= 3) %>%
+      filter(age >= 3) %>%  # only age 3+ are reproductive
       group_by(year) %>%
       summarise(Na_tot = sum(male) + sum(female)) %>%
       summarise(mean_Na = mean(Na_tot)) %>%
@@ -109,17 +115,21 @@ pair_nums <- lapply(
     # get the related pairs
     crel <- compile_related_pairs(slurped$samples)
 
-    # downsample to DownSample total samples, then to 1/sqrt(2) of that and 1/2 of that
+    # downsample to DownSample total samples, and also  to 1/sqrt(2) of that and 1/2 of that
     CNTS <- lapply(DownSampleSize * c(1, 1/sqrt(2), 1/2), function(ds) {
       dsamp <- downsample_pairs(slurped$samples, crel, ds)
 
-      # retain only the cross-cohort half siblings
+      # retain only the cross-cohort half siblings and the PO pairs
       xc_half_sibs_and_PO <- dsamp$ds_pairs %>%
         filter(
           (dom_relat == "Si" & born_year_1 != born_year_2 &  max_hit == 1) |
           dom_relat == "PO"
         )
 
+      # now summarise each relationship type by counting up the number
+      # of pairs in each connected component, and add all the parameters
+      # (cohort size, mean adult number, sample size, down sample size, etc.)
+      # in different columns.
       xc_half_sibs_and_PO %>%
         count(dom_relat,conn_comp) %>%
         rename(npairs_in_conn_comp = n) %>%
@@ -135,7 +145,7 @@ pair_nums <- lapply(
     }) %>%
       bind_rows()
 
-    # return  a tibble with the rep_num
+    # return  a tibble with the rep_num as the first column
     CNTS %>%
       mutate(rep = R) %>%
       select(rep, everything())
@@ -144,5 +154,6 @@ pair_nums <- lapply(
   bind_rows()
 
 
+# write it out to an RDS file to be read in and summarized later
 write_rds(pair_nums, file = outfile)
 
