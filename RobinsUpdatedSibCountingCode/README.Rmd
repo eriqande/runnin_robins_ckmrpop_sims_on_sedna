@@ -19,7 +19,7 @@ inserted it into the scheme I had originally made for parallelizing the runs
 so I could run it quickly on the cluster.
 
 To launch this on the cluster, you must have Snakemake in your environment.  From
-the directory in which this README resides you then do:
+the directory in which this README resides I did this:
 ```sh
-
+snakemake --use-envmodules --profile ../slurm_runnin_robin  --jobs 400
 ```
