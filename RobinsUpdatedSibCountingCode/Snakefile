@@ -4,9 +4,9 @@
 
 # Robin only needed the last three done here:
 # But I 
-csz = [2000] #, 128000, 512000, 2048000]
-ssz = [ 125] #,    709,   1418,    2836]
-reps = range(1,2)  # 1:100 
+csz = [ 128000, 512000, 2048000]
+ssz = [    709,   1418,    2836]
+reps = range(1,101)  # 1:100 
 
 mem_mb_dict = {
 	'128000': 9000,
