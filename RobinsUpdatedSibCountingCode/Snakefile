@@ -1,0 +1,60 @@
+
+#csz = [500, 2000, 8000, 32000, 128000, 512000, 2048000, 128000, 512000, 2048000]
+#ssz = [63,   125,  251,   501,   1003,   2005,    4010,    709,   1418,    2836] 
+
+# Robin only needed the last three done here:
+# But I 
+csz = [2000] #, 128000, 512000, 2048000]
+ssz = [ 125] #,    709,   1418,    2836]
+reps = range(1,2)  # 1:100 
+
+mem_mb_dict = {
+	'128000': 9000,
+	'512000': 30000,
+	'2048000': 94000
+}
+# a function to return memory requirements given cohort_size wildcard
+def mem_mb_needed(wc):
+	if(int(wc.cohort_size) < 128000):
+		return(4600)
+	else:
+		return(mem_mb_dict[wc.cohort_size])
+
+
+
+
+
+rule all:
+    input:
+        expand("summarized-full-output/csz{cohort_size}_ssz{sample_size}.rds", zip, cohort_size = csz, sample_size = ssz)
+
+
+rule simulate:
+    output:
+        "single-reps-full-output/{cohort_size}/{sample_size}/{rep}.rds"
+    params:
+    	cohort_size = "{cohort_size}",
+    	SampleSize = "{sample_size}",
+    	rep_num = "{rep}"
+    resources:
+    	mem_mb = lambda wc: mem_mb_needed(wc)
+    envmodules:
+    	"R/4.0.3"
+    log:
+    	"logs/single-reps-full-output/{cohort_size}/{sample_size}/{rep}-log.txt"
+    script:
+    	"R/single-rep-FinalSibs-modified-by-eric-for.R"
+        
+
+
+rule summarize_reps:
+    input:
+        expand("single-reps-full-output/{{cohort_size}}/{{sample_size}}/{rep}.rds", rep = reps)
+    output:
+        "summarized-full-output/csz{cohort_size}_ssz{sample_size}.rds"
+    envmodules:
+    	"R/4.0.3"
+    log:
+        "logs/summarized-full-output/csz{cohort_size}_ssz{sample_size}-log.txt"
+    script:
+        "R/summarize-reps-FinalSibs-modified-by-eric.R"
