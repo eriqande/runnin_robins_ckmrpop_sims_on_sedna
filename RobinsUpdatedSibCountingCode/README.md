@@ -23,4 +23,17 @@ After this was done I tarred the summarized results up into
 `RobinsUpdatedSibCountingCode/summarized-full-output.tar.gz`.
 
 The version of the code that I used to run the simulations can be found
-in commit `a865aeef323ff32bea1a7b694318827140a9c747`.
+in commit `a865aeef323ff32bea1a7b694318827140a9c747`. Or you can grab it
+by the tag `Phi=1`.
+
+## Doing a set of runs with Phi=10
+
+I had missed Robin’s request to run these at values of Phi equal to 1
+and 10.
+
+Rather than code those different runs up programmatically with different
+wildcards/parameters, I am just going to re-run what I did, having
+changed Phi to 10 in the R code and also changing the file output names
+to reflect that.
+
+That is at tag `Phi=10`.
