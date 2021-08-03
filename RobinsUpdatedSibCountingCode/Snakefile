@@ -26,12 +26,12 @@ def mem_mb_needed(wc):
 
 rule all:
     input:
-        expand("summarized-full-output/csz{cohort_size}_ssz{sample_size}.rds", zip, cohort_size = csz, sample_size = ssz)
+        expand("summarized-full-output/csz{cohort_size}_ssz{sample_size}_Phi10.rds", zip, cohort_size = csz, sample_size = ssz)
 
 
 rule simulate:
     output:
-        "single-reps-full-output/{cohort_size}/{sample_size}/{rep}.rds"
+        "single-reps-full-output/Phi10/{cohort_size}/{sample_size}/{rep}.rds"
     params:
     	cohort_size = "{cohort_size}",
     	SampleSize = "{sample_size}",
@@ -41,7 +41,7 @@ rule simulate:
     envmodules:
     	"R/4.0.3"
     log:
-    	"logs/single-reps-full-output/{cohort_size}/{sample_size}/{rep}-log.txt"
+    	"logs/single-reps-full-output/Phi10/{cohort_size}/{sample_size}/{rep}-log.txt"
     script:
     	"R/single-rep-FinalSibs-modified-by-eric-for.R"
         
@@ -49,12 +49,12 @@ rule simulate:
 
 rule summarize_reps:
     input:
-        expand("single-reps-full-output/{{cohort_size}}/{{sample_size}}/{rep}.rds", rep = reps)
+        expand("single-reps-full-output/Phi10/{{cohort_size}}/{{sample_size}}/{rep}.rds", rep = reps)
     output:
-        "summarized-full-output/csz{cohort_size}_ssz{sample_size}.rds"
+        "summarized-full-output/csz{cohort_size}_ssz{sample_size}_Phi10.rds"
     envmodules:
     	"R/4.0.3"
     log:
-        "logs/summarized-full-output/csz{cohort_size}_ssz{sample_size}-log.txt"
+        "logs/summarized-full-output/csz{cohort_size}_ssz{sample_size}_Phi10-log.txt"
     script:
         "R/summarize-reps-FinalSibs-modified-by-eric.R"
