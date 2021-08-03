@@ -13,8 +13,14 @@ and inserted it into the scheme I had originally made for parallelizing
 the runs so I could run it quickly on the cluster.
 
 To launch this on the cluster, you must have Snakemake in your
-environment. From the directory in which this README resides you then
-do:
+environment. From the directory in which this README resides I did this:
 
 ``` sh
+snakemake --use-envmodules --profile ../slurm_runnin_robin  --jobs 400
 ```
+
+After this was done I tarred the summarized results up into
+`RobinsUpdatedSibCountingCode/summarized-full-output.tar.gz`.
+
+The version of the code that I used to run the simulations can be found
+in commit `a865aeef323ff32bea1a7b694318827140a9c747`.
